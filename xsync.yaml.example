@@ -1,0 +1,34 @@
+# xsync配置文件模板
+# 可以配置为Master或Slave节点
+
+# 节点ID，用于标识节点
+node_id: "your-node-id"
+
+# 节点角色，可选值: "master" 或 "slave"
+role: "master"
+
+# AES-256加密密钥 (32字节)
+# 推荐使用环境变量XSYNC_KEY设置，而不是在配置文件中硬编码
+key: "your-32-byte-aes-key-here-change-me"
+
+# UDP监听端口
+udp_port: 9401
+
+# ===== Master节点特有配置 =====
+# 监控路径列表 (仅Master节点需要)
+monitor_paths:
+  - path: "./data01"  # 要监控的目录路径
+    slaves:           # 目标Slave节点列表
+      - "192.168.1.101:9402"
+      - "192.168.1.102:9403"
+  # 可以添加多个监控路径
+  - path: "./data04"
+    slaves:
+      - "192.168.1.103:9404"
+
+# ===== Slave节点特有配置 =====
+# Master节点地址 (仅Slave节点需要)
+master_addr: "192.168.1.100:9401"
+
+# 同步目录路径 (仅Slave节点需要)
+sync_path: "./data02"

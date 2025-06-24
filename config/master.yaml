@@ -1,0 +1,18 @@
+# Master节点配置文件
+node_id: "master"
+role: "master"
+key: "12345678901234567890123456789012" # 32字节AES-256密钥
+monitor_paths:
+  - path: "./data01"
+    slaves:
+      - "127.0.0.1:9402"
+      - "127.0.0.1:9403"
+udp_port: 9401
+
+# Web服务器配置（可选）
+web_server:
+  enabled: true          # 是否启用Web服务
+  port: 8081            # Web服务端口
+  username: "admin"     # Basic Auth用户名
+  password: "password"  # Basic Auth密码
+  upload_dir: "data01/uploads" # 上传目录
