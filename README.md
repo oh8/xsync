@@ -128,7 +128,7 @@ chmod +x xsync
 
 ### ⚙️ 配置文件
 
-#### Master 节点配置 (`config/master.yaml`)
+#### Master 节点配置 (`master.yaml`)
 
 ```yaml
 node_id: "master-01"
@@ -165,13 +165,13 @@ udp_port: 9402
 
 ```bash
 # 前台运行
-./xsync -c config/master.yaml
+./xsync -c master.yaml
 
 # 守护进程模式
-./xsync -c config/master.yaml -d
+./xsync -c master.yaml -d
 
 # 指定日志文件
-./xsync -c config/master.yaml -l /var/log/xsync-master.log -d
+./xsync -c master.yaml -l /var/log/xsync-master.log -d
 ```
 
 #### Web 服务使用

@@ -1,7 +1,0 @@
-# Slave2节点配置文件
-node_id: "slave2"
-role: "slave"
-key: "12345678901234567890123456789012" # 32字节AES-256密钥
-master_addr: "127.0.0.1:9401"
-sync_path: "./data03"
-udp_port: 9403

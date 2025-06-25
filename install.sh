@@ -46,14 +46,14 @@ fi
 
 # 检查配置文件是否存在
 if [ -d "config" ]; then
-    if [ -f "config/master.yaml" ]; then
-        cp "config/master.yaml" "$CONFIG_DIR/"
+    if [ -f "master.yaml" ]; then
+    cp "master.yaml" "$CONFIG_DIR/"
     fi
-    if [ -f "config/slave1.yaml" ]; then
-        cp "config/slave1.yaml" "$CONFIG_DIR/"
+    if [ -f "slave1.yaml" ]; then
+        cp "slave1.yaml" "$CONFIG_DIR/"
     fi
-    if [ -f "config/slave2.yaml" ]; then
-        cp "config/slave2.yaml" "$CONFIG_DIR/"
+    if [ -f "slave2.yaml" ]; then
+        cp "slave2.yaml" "$CONFIG_DIR/"
     fi
 fi
 

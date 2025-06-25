@@ -10,16 +10,52 @@ import (
 	"sync"
 	"time"
 
-	"xsync/config"
 	"xsync/protocol"
 	"xsync/transport"
 	"xsync/watcher"
 	"xsync/webserver"
 )
 
+// Config 配置结构（从main包导入的类型定义）
+type Config struct {
+	NodeID       string        `yaml:"node_id"`
+	Role         string        `yaml:"role"`
+	Key          string        `yaml:"key"`
+	UDPPort      int           `yaml:"udp_port"`
+	MonitorPaths []MonitorPath `yaml:"monitor_paths"`
+	MasterAddr   string        `yaml:"master_addr"`
+	SyncPath     string        `yaml:"sync_path"`
+	WebServer    *WebConfig    `yaml:"web_server"`
+}
+
+// WebConfig Web服务配置
+type WebConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Port      int    `yaml:"port"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	UploadDir string `yaml:"upload_dir"`
+}
+
+// MonitorPath Master监控路径配置
+type MonitorPath struct {
+	Path   string   `yaml:"path"`
+	Slaves []string `yaml:"slaves"`
+}
+
+// IsMaster 判断是否为Master节点
+func (c *Config) IsMaster() bool {
+	return c.Role == "master"
+}
+
+// IsSlave 判断是否为Slave节点
+func (c *Config) IsSlave() bool {
+	return c.Role == "slave"
+}
+
 // Master 主节点
 type Master struct {
-	config    *config.Config
+	config    *Config
 	transport transport.Transport
 	watchers  map[string]*watcher.FileWatcher
 	webServer *webserver.WebServer
@@ -28,7 +64,7 @@ type Master struct {
 }
 
 // NewMaster 创建Master节点
-func NewMaster(cfg *config.Config) (*Master, error) {
+func NewMaster(cfg *Config) (*Master, error) {
 	if !cfg.IsMaster() {
 		return nil, fmt.Errorf("配置不是Master节点")
 	}
@@ -45,7 +81,15 @@ func NewMaster(cfg *config.Config) (*Master, error) {
 
 	// 如果启用了Web服务，创建Web服务器
 	if cfg.WebServer != nil && cfg.WebServer.Enabled {
-		ws, err := webserver.NewWebServer(cfg.WebServer)
+		// 转换WebConfig类型
+		webCfg := &webserver.WebConfig{
+			Enabled:   cfg.WebServer.Enabled,
+			Port:      cfg.WebServer.Port,
+			Username:  cfg.WebServer.Username,
+			Password:  cfg.WebServer.Password,
+			UploadDir: cfg.WebServer.UploadDir,
+		}
+		ws, err := webserver.NewWebServer(webCfg)
 		if err != nil {
 			return nil, fmt.Errorf("创建Web服务器失败: %v", err)
 		}
@@ -87,7 +131,7 @@ func (m *Master) Start() error {
 }
 
 // startWatcher 启动文件监控器
-func (m *Master) startWatcher(monitorPath config.MonitorPath) error {
+func (m *Master) startWatcher(monitorPath MonitorPath) error {
 	// 检查路径是否存在
 	if _, err := os.Stat(monitorPath.Path); os.IsNotExist(err) {
 		return fmt.Errorf("监控路径不存在: %s", monitorPath.Path)
@@ -116,7 +160,7 @@ func (m *Master) startWatcher(monitorPath config.MonitorPath) error {
 }
 
 // handleFileEvents 处理文件事件
-func (m *Master) handleFileEvents(fw *watcher.FileWatcher, monitorPath config.MonitorPath) {
+func (m *Master) handleFileEvents(fw *watcher.FileWatcher, monitorPath MonitorPath) {
 	for {
 		select {
 		case event, ok := <-fw.GetEventChan():
@@ -132,7 +176,7 @@ func (m *Master) handleFileEvents(fw *watcher.FileWatcher, monitorPath config.Mo
 }
 
 // processFileEvent 处理单个文件事件
-func (m *Master) processFileEvent(event *watcher.FileEvent, monitorPath config.MonitorPath) {
+func (m *Master) processFileEvent(event *watcher.FileEvent, monitorPath MonitorPath) {
 	log.Printf("处理文件事件: %s %s", event.Op, event.Path)
 
 	// 创建同步包
@@ -264,7 +308,7 @@ func (m *Master) handleSyncRequest(slaveAddr string) error {
 }
 
 // isSlaveInPath 检查Slave是否在监控路径的目标列表中
-func (m *Master) isSlaveInPath(slaveAddr string, monitorPath config.MonitorPath) bool {
+func (m *Master) isSlaveInPath(slaveAddr string, monitorPath MonitorPath) bool {
 	for _, slave := range monitorPath.Slaves {
 		if slave == slaveAddr {
 			return true
@@ -338,7 +382,7 @@ func (m *Master) SyncInitialFiles() error {
 }
 
 // syncDirectoryToSlaves 同步目录到所有Slave
-func (m *Master) syncDirectoryToSlaves(monitorPath config.MonitorPath) error {
+func (m *Master) syncDirectoryToSlaves(monitorPath MonitorPath) error {
 	return filepath.Walk(monitorPath.Path, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err

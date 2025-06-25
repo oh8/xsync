@@ -12,19 +12,26 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"xsync/config"
 )
+
+// WebConfig Web服务配置
+type WebConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Port      int    `yaml:"port"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	UploadDir string `yaml:"upload_dir"`
+}
 
 // WebServer Web服务器
 type WebServer struct {
-	config   *config.WebConfig
+	config   *WebConfig
 	server   *http.Server
 	uploadDir string
 }
 
 // NewWebServer 创建Web服务器
-func NewWebServer(cfg *config.WebConfig) (*WebServer, error) {
+func NewWebServer(cfg *WebConfig) (*WebServer, error) {
 	if cfg == nil || !cfg.Enabled {
 		return nil, fmt.Errorf("Web服务未启用")
 	}

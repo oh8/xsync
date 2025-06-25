@@ -9,14 +9,50 @@ import (
 	"strings"
 	"time"
 
-	"xsync/config"
 	"xsync/protocol"
 	"xsync/transport"
 )
 
+// Config 配置结构（从main包导入的类型定义）
+type Config struct {
+	NodeID       string        `yaml:"node_id"`
+	Role         string        `yaml:"role"`
+	Key          string        `yaml:"key"`
+	UDPPort      int           `yaml:"udp_port"`
+	MonitorPaths []MonitorPath `yaml:"monitor_paths"`
+	MasterAddr   string        `yaml:"master_addr"`
+	SyncPath     string        `yaml:"sync_path"`
+	WebServer    *WebConfig    `yaml:"web_server"`
+}
+
+// WebConfig Web服务配置
+type WebConfig struct {
+	Enabled   bool   `yaml:"enabled"`
+	Port      int    `yaml:"port"`
+	Username  string `yaml:"username"`
+	Password  string `yaml:"password"`
+	UploadDir string `yaml:"upload_dir"`
+}
+
+// MonitorPath Master监控路径配置
+type MonitorPath struct {
+	Path   string   `yaml:"path"`
+	Slaves []string `yaml:"slaves"`
+}
+
+// IsMaster 判断是否为Master节点
+func (c *Config) IsMaster() bool {
+	return c.Role == "master"
+}
+
+// IsSlave 判断是否为Slave节点
+func (c *Config) IsSlave() bool {
+	return c.Role == "slave"
+}
+
 // Slave 从节点
 type Slave struct {
-	config    *config.Config
+	config    *Config
 	transport transport.Transport
 	done      chan bool
 	stats     *SlaveStats
@@ -31,7 +67,7 @@ type SlaveStats struct {
 }
 
 // NewSlave 创建Slave节点
-func NewSlave(cfg *config.Config) (*Slave, error) {
+func NewSlave(cfg *Config) (*Slave, error) {
 	if !cfg.IsSlave() {
 		return nil, fmt.Errorf("配置不是Slave节点")
 	}

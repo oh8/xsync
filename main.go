@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"xsync/config"
 	"xsync/master"
 	"xsync/slave"
 )
@@ -27,9 +26,58 @@ var (
 )
 
 const (
-	VERSION = "1.0.0"
+	VERSION  = "1.0.0"
 	APP_NAME = "xsync"
 )
+
+// 类型转换函数
+func convertMonitorPaths(paths []MonitorPath) []master.MonitorPath {
+	result := make([]master.MonitorPath, len(paths))
+	for i, path := range paths {
+		result[i] = master.MonitorPath{
+			Path:   path.Path,
+			Slaves: path.Slaves,
+		}
+	}
+	return result
+}
+
+func convertWebConfig(cfg *WebConfig) *master.WebConfig {
+	if cfg == nil {
+		return nil
+	}
+	return &master.WebConfig{
+		Enabled:   cfg.Enabled,
+		Port:      cfg.Port,
+		Username:  cfg.Username,
+		Password:  cfg.Password,
+		UploadDir: cfg.UploadDir,
+	}
+}
+
+func convertSlaveMonitorPaths(paths []MonitorPath) []slave.MonitorPath {
+	result := make([]slave.MonitorPath, len(paths))
+	for i, path := range paths {
+		result[i] = slave.MonitorPath{
+			Path:   path.Path,
+			Slaves: path.Slaves,
+		}
+	}
+	return result
+}
+
+func convertSlaveWebConfig(cfg *WebConfig) *slave.WebConfig {
+	if cfg == nil {
+		return nil
+	}
+	return &slave.WebConfig{
+		Enabled:   cfg.Enabled,
+		Port:      cfg.Port,
+		Username:  cfg.Username,
+		Password:  cfg.Password,
+		UploadDir: cfg.UploadDir,
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -64,7 +112,7 @@ func main() {
 	}
 
 	// 加载配置
-	cfg, err := config.LoadConfig(*configPath)
+	cfg, err := LoadConfig(*configPath)
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
@@ -94,8 +142,19 @@ type Node interface {
 }
 
 // startMaster 启动Master节点
-func startMaster(cfg *config.Config) (Node, error) {
-	m, err := master.NewMaster(cfg)
+func startMaster(cfg *Config) (Node, error) {
+	// 转换Config类型
+	masterCfg := &master.Config{
+		NodeID:       cfg.NodeID,
+		Role:         cfg.Role,
+		Key:          cfg.Key,
+		UDPPort:      cfg.UDPPort,
+		MonitorPaths: convertMonitorPaths(cfg.MonitorPaths),
+		MasterAddr:   cfg.MasterAddr,
+		SyncPath:     cfg.SyncPath,
+		WebServer:    convertWebConfig(cfg.WebServer),
+	}
+	m, err := master.NewMaster(masterCfg)
 	if err != nil {
 		return nil, fmt.Errorf("创建Master节点失败: %v", err)
 	}
@@ -116,8 +175,19 @@ func startMaster(cfg *config.Config) (Node, error) {
 }
 
 // startSlave 启动Slave节点
-func startSlave(cfg *config.Config) (Node, error) {
-	s, err := slave.NewSlave(cfg)
+func startSlave(cfg *Config) (Node, error) {
+	// 转换Config类型
+	slaveCfg := &slave.Config{
+		NodeID:       cfg.NodeID,
+		Role:         cfg.Role,
+		Key:          cfg.Key,
+		UDPPort:      cfg.UDPPort,
+		MonitorPaths: convertSlaveMonitorPaths(cfg.MonitorPaths),
+		MasterAddr:   cfg.MasterAddr,
+		SyncPath:     cfg.SyncPath,
+		WebServer:    convertSlaveWebConfig(cfg.WebServer),
+	}
+	s, err := slave.NewSlave(slaveCfg)
 	if err != nil {
 		return nil, fmt.Errorf("创建Slave节点失败: %v", err)
 	}
@@ -178,18 +248,18 @@ func printUsage() {
 	fmt.Printf("  -h              显示此帮助信息\n\n")
 	fmt.Printf("示例:\n")
 	fmt.Printf("  # 前台启动Master节点\n")
-	fmt.Printf("  %s -c config/master.yaml\n\n", APP_NAME)
+	fmt.Printf("  %s -c master.yaml\n\n", APP_NAME)
 	fmt.Printf("  # daemon模式启动Master节点\n")
-	fmt.Printf("  %s -d -c config/master.yaml -p /var/run/xsync-master.pid -l /var/log/xsync-master.log\n\n", APP_NAME)
+	fmt.Printf("  %s -d -c master.yaml -p /var/run/xsync-master.pid -l /var/log/xsync-master.log\n\n", APP_NAME)
 	fmt.Printf("  # daemon模式启动Slave节点\n")
-	fmt.Printf("  %s -d -c config/slave1.yaml -p /var/run/xsync-slave1.pid -l /var/log/xsync-slave1.log\n\n", APP_NAME)
+	fmt.Printf("  %s -d -c slave1.yaml -p /var/run/xsync-slave1.pid -l /var/log/xsync-slave1.log\n\n", APP_NAME)
 	fmt.Printf("环境变量:\n")
 	fmt.Printf("  XSYNC_KEY       AES-256加密密钥 (32字节)\n\n")
 	fmt.Printf("信号处理:\n")
 	fmt.Printf("  SIGTERM/SIGINT  优雅停止服务\n")
 	fmt.Printf("  SIGHUP          重新加载配置\n")
 	fmt.Printf("  SIGUSR1         输出状态信息\n\n")
-	fmt.Printf("更多信息请参考: https://github.com/your-org/xsync\n")
+	fmt.Printf("更多信息请参考: https://github.com/oh8/xsync\n")
 }
 
 // daemonize 进程daemon化

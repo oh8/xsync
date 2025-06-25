@@ -1,3 +1,0 @@
-This is a synchronization test file.
-Created at: 2025-06-25
-Content: Testing xsync file synchronization functionality.
