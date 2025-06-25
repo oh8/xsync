@@ -29,9 +29,44 @@ cp slave.yaml slave1.yaml
 ./xsync -c slave1.yaml
 ```
 
-### 3. Web 管理界面
+### 3. Web 上传下载接口
 
-访问 http://localhost:8081 使用 Web 管理功能：
+Master 节点提供 HTTP API 接口用于文件上传和下载：
+
+#### 健康检查
+```bash
+curl http://localhost:8081/health
+```
+
+#### 文件上传（需要认证）
+```bash
+# 使用 POST 方式上传
+curl -u admin:password -X POST \
+  -F "file=@example.txt" \
+  http://localhost:8081/upload
+
+# 使用 PUT 方式上传
+curl -u admin:password -X PUT \
+  -T "example.txt" \
+  http://localhost:8081/upload
+```
+
+#### 文件下载（无需认证）
+```bash
+# 下载指定文件
+curl -O http://localhost:8081/uploads/filename.txt
+
+# 下载并重命名
+curl http://localhost:8081/uploads/filename.txt -o local_file.txt
+```
+
+**API 接口说明：**
+- `GET /health` - 服务健康检查
+- `POST /upload` - 文件上传（multipart/form-data）
+- `PUT /upload` - 文件上传（binary data）
+- `GET /uploads/{filename}` - 文件下载
+
+**认证信息：**
 - 用户名：admin
 - 密码：password
 

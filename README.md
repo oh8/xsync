@@ -126,6 +126,35 @@ tar -xzf xsync-linux-amd64.tar.gz
 chmod +x xsync
 ```
 
+### 🔧 系统优化建议
+
+#### UDP 缓冲区优化
+
+为了获得最佳性能，特别是在高带宽网络环境下，建议优化系统的 UDP 缓冲区大小：
+
+**Linux 系统：**
+```bash
+# 临时设置（重启后失效）
+sudo sysctl -w net.core.rmem_max=7500000
+sudo sysctl -w net.core.wmem_max=7500000
+
+# 永久设置（添加到 /etc/sysctl.conf）
+echo 'net.core.rmem_max=7500000' | sudo tee -a /etc/sysctl.conf
+echo 'net.core.wmem_max=7500000' | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+```
+
+**macOS 系统：**
+```bash
+# 临时设置
+sudo sysctl -w kern.ipc.maxsockbuf=8441037
+
+# 永久设置（添加到 /etc/sysctl.conf）
+echo 'kern.ipc.maxsockbuf=8441037' | sudo tee -a /etc/sysctl.conf
+```
+
+> 💡 **说明**: 如果看到 "failed to sufficiently increase receive buffer size" 警告，这不会影响基本功能，只是在高带宽传输时可能影响性能。应用上述优化后可以消除此警告。
+
 ### ⚙️ 配置文件
 
 #### Master 节点配置 (`master.yaml`)
